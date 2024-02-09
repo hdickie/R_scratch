@@ -1,0 +1,181 @@
+---
+title: Deriving Simplified Model for Motion of Sun through the Sky as viewed from
+  18th and Castro
+output: html_document
+date: "2024-02-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(magrittr)
+```
+
+```{r loadFromClipboard}
+# yule_data <- read_clip()
+# save(yule_data,file='yule_data.rdata')
+
+# imbolc_data <- read_clip()
+# save(imbolc_data,file='imbolc_data.rdata')
+
+# ostara_data <- read_clip()
+# save(ostara_data,file='ostara_data.rdata')
+
+# beltane_data <- read_clip()
+# save(beltane_data,file='beltane_data.rdata')
+
+# litha_data <- read_clip()
+# save(litha_data,file='litha_data.rdata')
+
+# lughnasadh_data <- read_clip()
+# save(lughnasadh_data,file='lughnasadh_data.rdata')
+
+# mabon_data <- read_clip()
+# save(mabon_data,file='mabon_data.rdata')
+
+# samhain_data <- read_clip()
+# save(samhain_data,file='samhain_data.rdata')
+```
+
+```{r showdata}
+yule_data
+imbolc_data
+ostara_data
+beltane_data
+litha_data
+lughnasadh_data
+mabon_data
+samhain_data
+```
+ 
+```{r definePreprocess}
+text_to_df <- function(list_of_strings){
+  
+  for (i in 1:length(list_of_strings)){
+    
+    if (startsWith(list_of_strings[i] ,'Date') ){
+      # print('Date detected')
+    } else if (startsWith(list_of_strings[i] ,'coordinates') ){
+      # print('coordinates detected')
+    } else if (startsWith(list_of_strings[i] ,'location') ){
+      # print('location detected')
+    } else if (startsWith(list_of_strings[i] ,'hour  Elevation Azimuth') ){
+      # print('header row detected')
+    } else {
+      
+      new_data_row <- gsub('°','',list_of_strings[i])
+      new_data_row <- strsplit(new_data_row,split=' ') %>% unlist()
+      # print(paste(i,new_data_row,sep=' '))
+      
+      new_data_non_null_values_only <- list()
+      for (j in 1:length(new_data_row)){
+        if (new_data_row[j] != ""){
+          new_data_non_null_values_only <- append(new_data_non_null_values_only, new_data_row[j]) %>% unlist()
+        }
+      }
+      
+      
+      
+      timestamp <- new_data_non_null_values_only[1]
+      
+      timestamp_split_colon <- strsplit(timestamp,':') %>% unlist()
+      timestamp_in_minutes <- as.numeric(timestamp_split_colon[1]) * 60 + as.numeric(timestamp_split_colon[2])
+      
+      altitude <- new_data_non_null_values_only[2]
+      azimuth <- new_data_non_null_values_only[3]
+      
+      new.dataframe.row <- c(timestamp_in_minutes,altitude,azimuth)
+      
+
+      if ( !exists('sun.position.data')) {
+        sun.position.data <- data.frame(timestamp=timestamp_in_minutes,altitude=altitude,azimuth=azimuth)
+      } else {
+        sun.position.data <- rbind(sun.position.data,new.dataframe.row )
+      }
+    }
+  }
+  return(sun.position.data)
+}
+```
+
+```{r preprocess}
+yule.df <- text_to_df(yule_data)
+imbolc.df <- text_to_df(imbolc_data)
+ostara.df <- text_to_df(ostara_data)
+beltane.df <- text_to_df(beltane_data)
+litha.df <- text_to_df(litha_data)
+lughnasadh.df <- text_to_df(lughnasadh_data)
+mabon.df <- text_to_df(mabon_data)
+samhain.df <- text_to_df(samhain_data)
+
+yule.df$Date <- '2024-12-22'
+yule.df$Holiday <- 'Yule'
+yule.df$altitude <- as.numeric(yule.df$altitude)
+yule.df$azimuth <- as.numeric(yule.df$azimuth)
+
+imbolc.df$Date <- '2024-02-01'
+imbolc.df$Holiday <- 'Imbolc'
+imbolc.df$altitude <- as.numeric(imbolc.df$altitude)
+imbolc.df$azimuth <- as.numeric(imbolc.df$azimuth)
+
+ostara.df$Date <- '2024-03-22'
+ostara.df$Holiday <- 'Ostara'
+ostara.df$altitude <- as.numeric(ostara.df$altitude)
+ostara.df$azimuth <- as.numeric(ostara.df$azimuth)
+
+beltane.df$Date <- '2024-05-01'
+beltane.df$Holiday <- 'Beltane'
+beltane.df$altitude <- as.numeric(beltane.df$altitude)
+beltane.df$azimuth <- as.numeric(beltane.df$azimuth)
+
+litha.df$Date <- '2024-06-22'
+litha.df$Holiday <- 'Litha'
+litha.df$altitude <- as.numeric(litha.df$altitude)
+litha.df$azimuth <- as.numeric(litha.df$azimuth)
+
+lughnasadh.df$Date <- '2024-08-01'
+lughnasadh.df$Holiday <- 'Lughnasadh'
+lughnasadh.df$altitude <- as.numeric(lughnasadh.df$altitude)
+lughnasadh.df$azimuth <- as.numeric(lughnasadh.df$azimuth)
+
+mabon.df$Date <- '2024-09-22'
+mabon.df$Holiday <- 'Mabon'
+mabon.df$altitude <- as.numeric(mabon.df$altitude)
+mabon.df$azimuth <- as.numeric(mabon.df$azimuth)
+
+samhain.df$Date <- '2024-11-01'
+samhain.df$Holiday <- 'Samhain'
+samhain.df$altitude <- as.numeric(samhain.df$altitude)
+samhain.df$azimuth <- as.numeric(samhain.df$azimuth)
+
+holiday.sun.data.df <- rbind(imbolc.df, ostara.df, beltane.df, litha.df, lughnasadh.df, mabon.df, samhain.df, yule.df)
+
+# print(holiday.sun.data.df)
+print(holiday.sun.data.df)
+drawSunPath(holiday.sun.data.df)
+```
+```{r drawYuleModel}
+yule.model.df <- 0 #todo left here
+drawSunPathVsModel(yule.df,yule.model.df)
+```
+
+
+```{r drawPlots}
+drawSunPath <- function(sun.data.df) {
+  ggplot(data=sun.data.df,mapping=aes(azimuth,altitude,group=Holiday,color=Holiday)) + geom_line()
+}
+
+drawSunPathVsModel(sun.data.df, model.df){
+  
+  all.data.df <- rbind(sun.data.df, model.df)
+  ggplot(data=all.data.df,mapping=aes(azimuth,altitude,group=Holiday,color=Holiday)) + geom_line()
+}
+```
+
+```{r tmp}
+print(yule_data)
+```
+
+```{r saveFinal}
+save.image('SF Sunpath.Rdata')
+```
